@@ -9,14 +9,17 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using Android.Locations;
 
 using System.Runtime.CompilerServices;
 using LocationManager.Utility;
+using Android.Util;
 
 namespace LocationManager.ServicePackage
 {
-    class LocationService : Service
+    public class LocationService : Service
     {
+        private const String TAG = "LocationWriteService";
         public const String LOCK_NAME_STATIC = "LocationWriteService.Static";
         private const int LOCATION_INTERVAL = 1000 * 60 * 2;
         private const int SYSTEM_HEALTH_INTERVAL = 1000 * 60 * 10;
@@ -24,13 +27,20 @@ namespace LocationManager.ServicePackage
         private static PowerManager.WakeLock lockStatic = null;
         public long serviceStartTime;
 
+        private Android.Locations.LocationManager mLocationManager = null;
+        LocationListener[] mLocationListeners = new LocationListener[]{
+            new LocationListener(Android.Locations.LocationManager.GpsProvider),
+            new LocationListener(Android.Locations.LocationManager.NetworkProvider)
+        };
+
         Handler handler;
         HandlerThread handlerThread;
 
         ResultReceiver receiver;
+
         /**
-         * Target we publish for clients to send messages to IncomingHandler.
-         */
+        * Target we publish for clients to send messages to IncomingHandler.
+        */
 
         public override IBinder OnBind(Intent intent)
         {
@@ -74,57 +84,96 @@ namespace LocationManager.ServicePackage
 
             // Create a handler attached to the HandlerThread's Looper
             Handler mHandler = new Handler(handlerThread.Looper);
-            mHandler.Post(()=>
+            mHandler.Post(() =>
             {
-                initializeLocationManager();
-                //run an handler to get/write battery level and network info every 10 minutes
-                if (handler == null)
-                {
-                    handler = new Handler();
-                }
-                handler.postDelayed(batteryRunnable, SYSTEM_HEALTH_INTERVAL);
-                try
-                {
-                    mLocationManager.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                InitializeLocationManager();
+                mLocationManager.RequestLocationUpdates(
+                            Android.Locations.LocationManager.GpsProvider, LOCATION_INTERVAL, LOCATION_DISTANCE,
                             mLocationListeners[0]);
+                mLocationManager.RequestLocationUpdates(
+                           Android.Locations.LocationManager.NetworkProvider, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                           mLocationListeners[1]);
+            });
+        }
 
-                    if (UtilityClass.isBuildNougat())
-                    {
-                        GnssStatusCallback = new GnssStatus.Callback() {
-                            @Override
-                            public void onSatelliteStatusChanged(GnssStatus status)
-                        {
-                            super.onSatelliteStatusChanged(status);
-                            if (status != null)
-                            {
-                                final int length = status.getSatelliteCount();
-                                int index = 0;
-                                satelliteCount = 0;
-                                while (index < length)
-                                {
-                                    if (status.usedInFix(index))
-                                    {
-                                        satelliteCount++;
-                                    }
-                                    index++;
-                                }
-                            }
-                        }
-                    };
-                    mLocationManager.registerGnssStatusCallback(GnssStatusCallback);
-                } else
-                        mLocationManager.addGpsStatusListener(GpsStatuslistner);
-
-            } catch (java.lang.SecurityException ex)
+        private void InitializeLocationManager()
+        {
+            if (mLocationManager == null)
             {
-                Log.i(TAG, "fail to request location update, ignore", ex);
-            }
-            catch (IllegalArgumentException ex)
-            {
-                Log.d(TAG, "gps provider does not exist " + ex.getMessage());
+                mLocationManager = (Android.Locations.LocationManager)ApplicationContext.GetSystemService(Context.LocationService);
             }
         }
-         
+
+        /*
+        * removes the handler responsible for getting/writing the battery information and handlerThread
+        * is also quit to stop the service process and finally the service itself is stopped , also
+        * removes all location updates for the specified LocationListener.
+        * */
+        public void ReleaseResources()
+        {
+            base.OnDestroy();
+            if (lockStatic != null && lockStatic.IsHeld)
+                GetLock(this).Release();
+
+            handlerThread.QuitSafely();
+            StopSelf();
+            if (mLocationManager != null)
+            {
+                for (int i = 0; i < mLocationListeners.Length; i++)
+                {
+                    try
+                    {
+                        mLocationManager.RemoveUpdates(mLocationListeners[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Info(TAG, "fail to remove location listners, ignore", ex);
+                    }
+                }
+            }
+        }
+
+
+
+
+        public class LocationListener : Android.Locations.ILocationListener
+        {
+            Location mLastLocation;
+
+            public LocationListener(string gpsProvider)
+            {
+                mLastLocation = new Location(gpsProvider);
+            }
+
+            IntPtr IJavaObject.Handle => throw new NotImplementedException();
+
+            void IDisposable.Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            void ILocationListener.OnLocationChanged(Location location)
+            {
+                mLastLocation.Set(location);
+                /*
+                 * Need to make a network call to push the lat long to the server
+                 */
+            }
+
+            void ILocationListener.OnProviderDisabled(string provider)
+            {
+                throw new NotImplementedException();
+            }
+
+            void ILocationListener.OnProviderEnabled(string provider)
+            {
+                throw new NotImplementedException();
+            }
+
+            void ILocationListener.OnStatusChanged(string provider, Availability status, Bundle extras)
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }

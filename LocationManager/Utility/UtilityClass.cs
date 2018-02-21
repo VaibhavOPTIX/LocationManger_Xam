@@ -20,8 +20,8 @@ namespace LocationManager.Utility
     {
         public const int PERMISSION_ALL = 1;
         public static String[] PERMISSIONS = {Manifest.Permission.AccessFineLocation};
-        public static int GET_START_TIME = 1;
-        public static int STOP_SERVICE = 2;
+        public const int GET_START_TIME = 1;
+        public const int STOP_SERVICE = 2;
         private String LOG_TAG = "UtilityClass";
 
 
