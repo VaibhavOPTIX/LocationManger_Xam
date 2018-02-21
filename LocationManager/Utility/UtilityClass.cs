@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Android;
+using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
-using Android.Support.V4.App;
 using Android.Support.V7.App;
 using Android.Text;
 using Android.Views;
@@ -32,7 +32,7 @@ namespace LocationManager.Utility
             {
                 foreach (String permission in permissions)
                 {
-                    if (ActivityCompat.CheckSelfPermission(context, permission) != Android.Content.PM.Permission.Granted)
+                    if (Android.Support.V4.App.ActivityCompat.CheckSelfPermission(context, permission) != Permission.Granted)
                     {
                         return false;
                     }
@@ -73,7 +73,7 @@ namespace LocationManager.Utility
                     return false;
                 }
 
-                return locationMode.Equals(Android.Provider.SecurityLocationMode.Off;
+                return locationMode.Equals(Android.Provider.SecurityLocationMode.Off);
 
             }
             else
@@ -104,14 +104,12 @@ namespace LocationManager.Utility
             return false;
         }
 
-        public static AlertDialog ShowAlertDialog(Context mContext, String message, String PositiveButton, String NegativeButton)
+        public static Android.Support.V7.App.AlertDialog ShowAlertDialog(Context mContext, String message, String PositiveButton, String NegativeButton)
         {
-            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            Android.Support.V7.App.AlertDialog.Builder builder = new Android.Support.V7.App.AlertDialog.Builder(mContext);
             builder.SetMessage(message);
             builder.SetCancelable(true);
-            builder.SetNegativeButton(NegativeButton, null);
-            builder.setPositiveButton(PositiveButton, null);
-            AlertDialog alertDialog = builder.Create();
+            Android.Support.V7.App.AlertDialog alertDialog = builder.Create();
             alertDialog.Show();
             return alertDialog;
         }
