@@ -13,7 +13,7 @@ using LocationManager.ServicePackage;
 
 namespace LocationManager
 {
-    [Activity(Label = "LocationManager", MainLauncher = true, Theme = "@style/AppTheme.NoActionBar")]
+    [Activity(Label = "LocationManager", MainLauncher = true, Theme = "@style/AppTheme")]
     public class MainActivity : AppCompatActivity, ServiceResultReceiver.IReceiver, IServiceConnection
     {
         Button startService, stopService;
@@ -37,6 +37,7 @@ namespace LocationManager
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
             InitializeViewId();
+            mContext = this;
 
             //Check if the required permissions are granted. Required for system after API 23
             CheckLocationPermission();

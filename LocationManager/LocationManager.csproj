@@ -101,8 +101,6 @@
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServicePackage\IncomingHandler.cs" />
-    <Compile Include="ServicePackage\LocationListener.cs" />
     <Compile Include="ServicePackage\LocationService.cs" />
     <Compile Include="ServicePackage\OnAlarmReceiver.cs" />
     <Compile Include="ServicePackage\ServiceResultReceiver.cs" />

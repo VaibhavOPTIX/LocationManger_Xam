@@ -33,7 +33,6 @@ namespace LocationManager.ServicePackage
             new LocationListener(Android.Locations.LocationManager.NetworkProvider)
         };
 
-        Handler handler;
         HandlerThread handlerThread;
 
         ResultReceiver receiver;
@@ -136,20 +135,13 @@ namespace LocationManager.ServicePackage
 
 
 
-        public class LocationListener : Android.Locations.ILocationListener
+        public class LocationListener : Java.Lang.Object,Android.Locations.ILocationListener
         {
             Location mLastLocation;
 
             public LocationListener(string gpsProvider)
             {
                 mLastLocation = new Location(gpsProvider);
-            }
-
-            IntPtr IJavaObject.Handle => throw new NotImplementedException();
-
-            void IDisposable.Dispose()
-            {
-                throw new NotImplementedException();
             }
 
             void ILocationListener.OnLocationChanged(Location location)
@@ -162,17 +154,14 @@ namespace LocationManager.ServicePackage
 
             void ILocationListener.OnProviderDisabled(string provider)
             {
-                throw new NotImplementedException();
             }
 
             void ILocationListener.OnProviderEnabled(string provider)
             {
-                throw new NotImplementedException();
             }
 
             void ILocationListener.OnStatusChanged(string provider, Availability status, Bundle extras)
             {
-                throw new NotImplementedException();
             }
         }
     }

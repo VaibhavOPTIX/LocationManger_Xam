@@ -22,7 +22,6 @@ namespace LocationManager.Utility
         public static String[] PERMISSIONS = {Manifest.Permission.AccessFineLocation};
         public const int GET_START_TIME = 1;
         public const int STOP_SERVICE = 2;
-        private String LOG_TAG = "UtilityClass";
 
 
         /*Check if the necessary permissions were granted and return boolean */
