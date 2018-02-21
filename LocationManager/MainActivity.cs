@@ -14,7 +14,7 @@ using LocationManager.ServicePackage;
 namespace LocationManager
 {
     [Activity(Label = "LocationManager", MainLauncher = true, Theme = "@style/AppTheme.NoActionBar")]
-    public class MainActivity : AppCompatActivity, ServiceResultReceiver.IReceiver
+    public class MainActivity : AppCompatActivity, ServiceResultReceiver.IReceiver, IServiceConnection
     {
         Button startService, stopService;
         TextView startTime, status;
@@ -25,9 +25,10 @@ namespace LocationManager
 
         bool permissionGranted;
         Context mContext;
-        Handler handler;
+
         bool mBound = false;
         Messenger mService = null;
+
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -172,9 +173,9 @@ namespace LocationManager
                 {
                     ex.PrintStackTrace();
                 }
-                UnbindService(mConnection);
+                UnbindService(this);
                 mBound = false;
-                handler.RemoveCallbacks(runnable);
+
                 status.Text = "Not Running";
                 stopService.Enabled = false;
                 stopService.Click += null;
@@ -197,7 +198,7 @@ namespace LocationManager
             serviceIntent.PutExtra("receiver", receiver);
             StartService(serviceIntent);
             if (!mBound)
-                BindService(serviceIntent, mConnection, Bind.AutoCreate);
+                BindService(serviceIntent, this, Bind.AutoCreate);
         }
 
         protected override void OnResume()
@@ -213,8 +214,24 @@ namespace LocationManager
                 stopService.Click += null;
             }
         }
-        
 
+
+        /**
+        * Defines callbacks for service binding, passed to bindService()
+        */
+        void IServiceConnection.OnServiceConnected(ComponentName name, IBinder service)
+        {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            mService = new Messenger(service);
+            mBound = true;
+            status.Text = "Running";
+        }
+
+        void IServiceConnection.OnServiceDisconnected(ComponentName name)
+        {
+            mService = null;
+            mBound = false;
+        }
     }
 }
        
