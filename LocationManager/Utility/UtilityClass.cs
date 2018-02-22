@@ -14,7 +14,7 @@ using Android.Views;
 using Android.Widget;
 using Java.Util;
 
-namespace LocationManager.Utility
+namespace locationManager.utility
 {
     class UtilityClass
     {

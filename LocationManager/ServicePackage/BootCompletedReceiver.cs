@@ -9,10 +9,11 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using locationManager.ServicePackage;
 
-namespace LocationManager.ServicePackage
+namespace locationManager.servicePackage
 {
-    [BroadcastReceiver(Enabled =true, Exported =false,Name = "LocationManager.ServicePackage.BootCompletedReceiver",Label = "BootCompletedReceiver")]
+    [BroadcastReceiver(Enabled =true, Exported =false,Name = "locationManager.servicePackage.BootCompletedReceiver",Label = "BootCompletedReceiver")]
     [IntentFilter(new[] { Android.Content.Intent.ActionBootCompleted })]
     class BootCompletedReceiver : BroadcastReceiver
     {

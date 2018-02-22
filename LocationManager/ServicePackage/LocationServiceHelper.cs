@@ -12,15 +12,15 @@ using Android.Widget;
 using Android.Locations;
 
 using System.Runtime.CompilerServices;
-using LocationManager.Utility;
+using locationManager.utility;
 using Android.Util;
-using LocationManager.Network;
-using LocationManager.Model;
-using static LocationManager.Model.pushObject;
+using locationManager.network;
+using locationManager.model;
+using static locationManager.model.pushObject;
 
-namespace LocationManager.ServicePackage
+namespace locationManager.ServicePackage
 {
-    [Service(Exported = false, Name = "LocationManager.ServicePackage.LocationServiceHelper", Label ="LocationServiceHelper")]
+    [Service(Exported = false, Name = "locationManager.servicePackage.LocationServiceHelper", Label ="LocationServiceHelper")]
     public class LocationServiceHelper : Service
     {
         private const String TAG = "LocationWriteService";

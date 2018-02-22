@@ -9,8 +9,8 @@
     <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LocationManager</RootNamespace>
-    <AssemblyName>LocationManager</AssemblyName>
+    <RootNamespace>locationManager</RootNamespace>
+    <AssemblyName>locationManager</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <AndroidApplication>True</AndroidApplication>
     <AndroidResgenFile>Resources\Resource.Designer.cs</AndroidResgenFile>
@@ -105,15 +105,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
-    <Compile Include="Model\pushObject.cs" />
-    <Compile Include="Network\NetworkCall.cs" />
+    <Compile Include="model\pushObject.cs" />
+    <Compile Include="network\NetworkCall.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServicePackage\BootCompletedReceiver.cs" />
-    <Compile Include="ServicePackage\LocationServiceHelper.cs" />
-    <Compile Include="ServicePackage\OnAlarmReceiver.cs" />
-    <Compile Include="ServicePackage\ServiceResultReceiver.cs" />
-    <Compile Include="Utility\UtilityClass.cs" />
+    <Compile Include="servicePackage\BootCompletedReceiver.cs" />
+    <Compile Include="servicePackage\LocationServiceHelper.cs" />
+    <Compile Include="servicePackage\OnAlarmReceiver.cs" />
+    <Compile Include="servicePackage\ServiceResultReceiver.cs" />
+    <Compile Include="utility\UtilityClass.cs" />
     <AndroidResource Include="Resources\values\colors.xml">
       <SubType>Designer</SubType>
     </AndroidResource>

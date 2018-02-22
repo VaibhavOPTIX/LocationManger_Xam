@@ -9,8 +9,9 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using locationManager.ServicePackage;
 
-namespace LocationManager.ServicePackage
+namespace locationManager.servicePackage
 {
     public class OnAlarmReceiver : BroadcastReceiver
     {

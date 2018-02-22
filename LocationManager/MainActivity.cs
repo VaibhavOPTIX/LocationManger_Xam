@@ -4,16 +4,17 @@ using Android.OS;
 using Android.Support.V7.App;
 using Android.Content;
 using System;
-using LocationManager.Utility;
+using locationManager.utility;
 using Android.Support.V4.App;
 using Android;
 using Android.Content.PM;
 using Android.Runtime;
-using LocationManager.ServicePackage;
+using locationManager.servicePackage;
 using Java.Lang;
 using Java.Util.Concurrent;
+using locationManager.ServicePackage;
 
-namespace LocationManager
+namespace locationManager
 {
     [Activity(Label = "LocationManager", MainLauncher = true, Theme = "@style/AppTheme.NoActionBar")]
     public class MainActivity : AppCompatActivity, ServiceResultReceiver.IReceiver, IServiceConnection
@@ -140,7 +141,7 @@ namespace LocationManager
             if (resultCode == (int)Result.Ok)
             {
                 serviceStartTime = resultData.GetString("cordinate").Split(':');
-                coordinate.Text = System.String.Format("{0} Latitude:{0} \nLongitude{0}", coordinate.Text, serviceStartTime[0], serviceStartTime[1]);
+                coordinate.Text = System.String.Format("Latitude:{0} \nLongitude{1}", serviceStartTime[0], serviceStartTime[1]);
             }
         }
 

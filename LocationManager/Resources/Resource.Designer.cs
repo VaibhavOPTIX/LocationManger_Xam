@@ -9,9 +9,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: global::Android.Runtime.ResourceDesignerAttribute("LocationManager.Resource", IsApplication=true)]
+[assembly: global::Android.Runtime.ResourceDesignerAttribute("locationManager.Resource", IsApplication=true)]
 
-namespace LocationManager
+namespace locationManager
 {
 	
 	

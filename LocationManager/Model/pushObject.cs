@@ -10,7 +10,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 
-namespace LocationManager.Model
+namespace locationManager.model
 {
     
     public class pushObject

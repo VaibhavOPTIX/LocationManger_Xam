@@ -10,7 +10,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 
-namespace LocationManager.ServicePackage
+namespace locationManager.servicePackage
 {
     public class ServiceResultReceiver : ResultReceiver
     {
