@@ -14,6 +14,9 @@ using Android.Locations;
 using System.Runtime.CompilerServices;
 using LocationManager.Utility;
 using Android.Util;
+using LocationManager.Network;
+using LocationManager.Model;
+using static LocationManager.Model.pushObject;
 
 namespace LocationManager.ServicePackage
 {
@@ -26,6 +29,8 @@ namespace LocationManager.ServicePackage
         private const float LOCATION_DISTANCE = 10f;
         private static PowerManager.WakeLock lockStatic = null;
         public long serviceStartTime;
+
+        NetworkCall networkCall;
 
         private Android.Locations.LocationManager mLocationManager = null;
         LocationListenerHelper[] mLocationListeners = null;
@@ -41,6 +46,8 @@ namespace LocationManager.ServicePackage
 
         public override IBinder OnBind(Intent intent)
         {
+            if(networkCall==null)
+                networkCall = new NetworkCall();
             return mMessenger.Binder;
         }
 
@@ -175,20 +182,23 @@ namespace LocationManager.ServicePackage
             public LocationListenerHelper(LocationServiceHelper locationServiceHelper, string gpsProvider)
             {
                 mLastLocation = new Location(gpsProvider);
+                this.locationServiceHelper = locationServiceHelper;
             }
 
-            void ILocationListener.OnLocationChanged(Location location)
+            async void ILocationListener.OnLocationChanged(Location location)
             {
                 Bundle bundle = new Bundle();
                 bundle.PutString("cordinate", location.Latitude+":"+location.Longitude);
-            
-                mLastLocation.Set(location);
-
                 locationServiceHelper.receiver.Send(Result.Ok, bundle);
                 Log.Error(TAG, "Location Latitude =>>" + location.Latitude + " Longitude=>>" + location.Longitude);
-                /*
-                 * Need to make a network call to push the lat long to the server
-                 */
+
+                mLastLocation.Set(location);
+
+                pushObject obj = new pushObject();
+                obj.items = new List<pushItem>();
+                obj.id = 1;
+                obj.items.Add(new pushItem { lan = Convert.ToDecimal(location.Longitude), lat = Convert.ToDecimal(location.Latitude), localid = 0, timestamp = DateTime.Now.Millisecond.ToString() });
+                locationServiceHelper.networkCall.SendCoordinateAsync(obj);
             }
 
             void ILocationListener.OnProviderDisabled(string provider)

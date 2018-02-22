@@ -12,16 +12,18 @@ using Android.Widget;
 
 namespace LocationManager.Model
 {
-    public class pushItem
-    {
-        public int localid { get; set; }
-        public decimal lat { get; set; }
-        public decimal lan { get; set; }
-        public string timestamp { get; set; }
-    }
+    
     public class pushObject
     {
         public int id { get; set; }
         public List<pushItem> items { get; set; }
+
+        public class pushItem
+        {
+            public int localid { get; set; }
+            public decimal lat { get; set; }
+            public decimal lan { get; set; }
+            public string timestamp { get; set; }
+        }
     }
 }

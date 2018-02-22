@@ -293,13 +293,6 @@ namespace LocationManager
 
             public void Run()
             {
-                if (splashActivity.mBound && splashActivity.serviceStartTime != 0L)
-                {
-                    long timeDelta = UtilityClass.GetUTC() - splashActivity.serviceStartTime;
-                    splashActivity.startTime.Text = TimeUnit.Milliseconds.ToMinutes(timeDelta) + " Minutes";
-                }
-                else
-                {
                     if (splashActivity.mBound)
                     {
                         // Create and send a message to the service, using a supported 'what' value
@@ -313,8 +306,8 @@ namespace LocationManager
                             e.PrintStackTrace();
                         }
                     }
-                }
-                MHandler.PostDelayed(this, 60000);
+                
+
             }
         }
     }

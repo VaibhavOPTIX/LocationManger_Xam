@@ -11,22 +11,30 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using LocationManager.Model;
+using Newtonsoft.Json;
 
 namespace LocationManager.Network
 {
-    public class NetworkCall
+    public class NetworkCall:Java.Lang.Object
     {
-        static HttpClient client = new HttpClient();
+        static HttpClient client;
 
-
-        static async Task<pushObject> SendCoordinateAsync(pushObject data)
+        public NetworkCall()
         {
-            HttpResponseMessage response = await client.PostAsync(
-                "api/push", product);
-            response.EnsureSuccessStatusCode();
+            client = new HttpClient();
+        }
 
-            // return URI of the created resource.
-            return response.Headers.Location;
+        public async void SendCoordinateAsync(pushObject data)
+        {
+            var stringContent = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await client.PostAsync("http://test.ninestack.com/pushes/api/push", stringContent);
+            response.EnsureSuccessStatusCode();
+            //if (response.IsSuccessStatusCode)
+            //{
+
+            //    var dataText = await response.Content.ReadAsStringAsync();
+            //    return JsonConvert.DeserializeObject<pushObject>(dataText);
+            //}
         }
     }
 }
