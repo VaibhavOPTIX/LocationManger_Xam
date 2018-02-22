@@ -16,7 +16,7 @@ namespace LocationManager.ServicePackage
     {
         public override void OnReceive(Context context, Intent intent)
         {
-            context.StartService(new Intent(context, typeof(LocationService)));
+            context.StartService(new Intent(context, typeof(LocationServiceHelper)));
         }
     }
 }

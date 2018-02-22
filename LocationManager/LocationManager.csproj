@@ -105,12 +105,10 @@
     <Compile Include="ServicePackage\OnAlarmReceiver.cs" />
     <Compile Include="ServicePackage\ServiceResultReceiver.cs" />
     <Compile Include="Utility\UtilityClass.cs" />
-    <Content Include="Resources\values\styles.xml">
+    <AndroidResource Include="Resources\values\colors.xml">
       <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Resources\values\colors.xml">
-      <SubType>Designer</SubType>
-    </Content>
+    </AndroidResource>
+    <AndroidResource Include="Resources\values\styles.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GettingStarted.Xamarin" />

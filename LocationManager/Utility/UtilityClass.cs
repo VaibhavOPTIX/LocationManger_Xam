@@ -72,7 +72,7 @@ namespace LocationManager.Utility
                     return false;
                 }
 
-                return locationMode.Equals(Android.Provider.SecurityLocationMode.Off);
+                return !locationMode.Equals(Android.Provider.SecurityLocationMode.Off);
 
             }
             else
@@ -83,14 +83,14 @@ namespace LocationManager.Utility
         }
 
 
-        public static long getUTC()
+        public static long GetUTC()
         {
             Calendar cal = Calendar.GetInstance(Java.Util.TimeZone.GetTimeZone("GMT"));
             return cal.TimeInMillis;
         }
 
         /*Check if the service is running on app resume and  bing to the service to get relevant data*/
-        public static Boolean IsMyServiceRunning(Context mContext,string serviceClass)
+        public static Boolean IsMyServiceRunning(Context mContext, string serviceClass)
         {
             ActivityManager manager = (ActivityManager)mContext.GetSystemService(Context.ActivityService);
             foreach (ActivityManager.RunningServiceInfo service in manager.GetRunningServices(Int32.MaxValue))

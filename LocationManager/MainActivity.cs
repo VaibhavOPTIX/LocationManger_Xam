@@ -10,10 +10,12 @@ using Android;
 using Android.Content.PM;
 using Android.Runtime;
 using LocationManager.ServicePackage;
+using Java.Lang;
+using Java.Util.Concurrent;
 
 namespace LocationManager
 {
-    [Activity(Label = "LocationManager", MainLauncher = true, Theme = "@style/AppTheme")]
+    [Activity(Label = "LocationManager", MainLauncher = true, Theme = "@style/AppTheme.NoActionBar")]
     public class MainActivity : AppCompatActivity, ServiceResultReceiver.IReceiver, IServiceConnection
     {
         Button startService, stopService;
@@ -21,13 +23,14 @@ namespace LocationManager
 
         public ServiceResultReceiver receiver;
 
-        public String[]serviceStartTime;
+        public long serviceStartTime;
 
         bool permissionGranted;
         Context mContext;
-
+        Handler handler;
         bool mBound = false;
         Messenger mService = null;
+        RunnableHelper helper;
 
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -44,6 +47,19 @@ namespace LocationManager
 
             // Setup the callback for when data is received from the service
             SetupServiceReceiver();
+
+            startService.Click += (s, e) =>
+            {
+                StartService();
+            };
+
+            stopService.Click += StopServiceListener;
+
+            if (handler == null)
+            {
+                handler = new Handler();
+                helper = new RunnableHelper(this,handler);
+            }
         }
 
 
@@ -54,7 +70,7 @@ namespace LocationManager
             // This is where we specify what happens when data is received from the service
             receiver.SetReceiver(this);
         }
-    
+
 
 
         /**
@@ -122,7 +138,7 @@ namespace LocationManager
         {
             if (resultCode == (int)Result.Ok)
             {
-                serviceStartTime = resultData.GetString("cordinate").Split(':') ;
+                serviceStartTime = resultData.GetLong("cordinate");//.Split(':');
             }
         }
 
@@ -159,7 +175,7 @@ namespace LocationManager
                 }
             }
         }
-        
+
 
         private void StopServiceListener(object sender, EventArgs e)
         {
@@ -170,13 +186,13 @@ namespace LocationManager
                 {
                     mService.Send(msg);
                 }
-                catch (RemoteException ex )
+                catch (RemoteException ex)
                 {
                     ex.PrintStackTrace();
                 }
                 UnbindService(this);
                 mBound = false;
-
+                handler.RemoveCallbacks(helper);
                 status.Text = "Not Running";
                 stopService.Enabled = false;
                 stopService.Click += null;
@@ -195,7 +211,7 @@ namespace LocationManager
                     SystemClock.ElapsedRealtime() + 60000,
                     300000,
                     pi);
-            Intent serviceIntent = new Intent(mContext, typeof(LocationService));
+            Intent serviceIntent = new Intent(mContext, typeof(LocationServiceHelper));
             serviceIntent.PutExtra("receiver", receiver);
             StartService(serviceIntent);
             if (!mBound)
@@ -206,13 +222,27 @@ namespace LocationManager
         {
             base.OnResume();
             /*Check if the service is running on app resume and  bing to the service to get relevant data*/
-            if (UtilityClass.IsMyServiceRunning(this, typeof(LocationService).Name)) {
-            StartServiceAndBind();
-            status.Text = "Running";
-            } else {
+            if (UtilityClass.IsMyServiceRunning(this, typeof(LocationServiceHelper).Name))
+            {
+                StartServiceAndBind();
+                status.Text = "Running";
+            }
+            else
+            {
                 status.Text = "Not Running";
                 stopService.Enabled = false;
                 stopService.Click += null;
+            }
+        }
+
+        protected override void OnStop()
+        {
+            base.OnStop();
+            if (mBound)
+            {
+                handler.RemoveCallbacks(helper);
+                UnbindService(this);
+                mBound = false;
             }
         }
 
@@ -232,6 +262,56 @@ namespace LocationManager
         {
             mService = null;
             mBound = false;
+        }
+
+
+
+
+
+
+
+
+        private class RunnableHelper : Java.Lang.Object, Java.Lang.IRunnable
+        {
+            MainActivity splashActivity;
+            Handler handler;
+            int progress = 0;
+
+            public RunnableHelper(MainActivity splashActivity, Handler handler)
+            {
+                this.splashActivity = splashActivity;
+            }
+
+            public new void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Run()
+            {
+                if (splashActivity.mBound && splashActivity.serviceStartTime != 0l)
+                {
+                    long timeDelta = UtilityClass.GetUTC() - splashActivity.serviceStartTime;
+                    splashActivity.startTime.Text = TimeUnit.Milliseconds.ToMinutes(timeDelta) + " Minutes";
+                }
+                else
+                {
+                    if (splashActivity.mBound)
+                    {
+                        // Create and send a message to the service, using a supported 'what' value
+                        Message msg = Message.Obtain(null, UtilityClass.GET_START_TIME, 0, 0);
+                        try
+                        {
+                            splashActivity.mService.Send(msg);
+                        }
+                        catch (RemoteException e)
+                        {
+                            e.PrintStackTrace();
+                        }
+                    }
+                }
+                handler.PostDelayed(this, 60000);
+            }
         }
     }
 }

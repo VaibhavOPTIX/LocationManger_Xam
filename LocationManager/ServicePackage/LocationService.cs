@@ -17,20 +17,19 @@ using Android.Util;
 
 namespace LocationManager.ServicePackage
 {
-    public class LocationService : Service
+    public class LocationServiceHelper : Service
     {
         private const String TAG = "LocationWriteService";
         public const String LOCK_NAME_STATIC = "LocationWriteService.Static";
-        private const int LOCATION_INTERVAL = 1000 * 60 * 2;
-        private const int SYSTEM_HEALTH_INTERVAL = 1000 * 60 * 10;
-        private const float LOCATION_DISTANCE = 0f;
+        private const int LOCATION_INTERVAL = 1000 * 30;
+        private const float LOCATION_DISTANCE = 10f;
         private static PowerManager.WakeLock lockStatic = null;
         public long serviceStartTime;
 
         private Android.Locations.LocationManager mLocationManager = null;
-        LocationListener[] mLocationListeners = new LocationListener[]{
-            new LocationListener(Android.Locations.LocationManager.GpsProvider),
-            new LocationListener(Android.Locations.LocationManager.NetworkProvider)
+        LocationListenerHelper[] mLocationListeners = new LocationListenerHelper[]{
+            new LocationListenerHelper(Android.Locations.LocationManager.GpsProvider),
+            new LocationListenerHelper(Android.Locations.LocationManager.NetworkProvider)
         };
 
         HandlerThread handlerThread;
@@ -40,10 +39,11 @@ namespace LocationManager.ServicePackage
         /**
         * Target we publish for clients to send messages to IncomingHandler.
         */
+        Messenger mMessenger = null;
 
         public override IBinder OnBind(Intent intent)
         {
-            throw new NotImplementedException();
+            return mMessenger.Binder;
         }
 
         // this used to get a wakelock when a file is to be written to as it may so happen the CPU is asleep
@@ -66,15 +66,19 @@ namespace LocationManager.ServicePackage
         [return: GeneratedEnum]
         public override StartCommandResult OnStartCommand(Intent intent, [GeneratedEnum] StartCommandFlags flags, int startId)
         {
+            base.OnStartCommand(intent, flags, startId);
             if (intent != null && intent.GetParcelableExtra("receiver") != null)
                 receiver = (ResultReceiver)intent.GetParcelableExtra("receiver");
             return StartCommandResult.Sticky;
         }
+    
 
         public override void OnCreate()
         {
             base.OnCreate();
-            serviceStartTime = UtilityClass.getUTC();
+            serviceStartTime = UtilityClass.GetUTC();
+            if( mMessenger ==null)
+                mMessenger = new Messenger(new IncomingHandler(this));
 
             // Creates a new background thread for processing messages or runnables sequentially
             handlerThread = new HandlerThread("LocationThread");
@@ -132,14 +136,40 @@ namespace LocationManager.ServicePackage
             }
         }
 
+        public class IncomingHandler: Handler
+        {
+            LocationServiceHelper mContext;
+            public IncomingHandler(LocationServiceHelper context)
+            {
+                this.mContext = context;
+            }
+
+            public override void HandleMessage(Message msg)
+            {
+               
+                Bundle bundle = new Bundle();
+                switch (msg.What)
+                {
+                    case UtilityClass.GET_START_TIME:
+                        bundle.PutLong("startTime", mContext.serviceStartTime);
+                        mContext.receiver.Send(Result.Ok, bundle);
+                        break;
+                    case UtilityClass.STOP_SERVICE:
+                        mContext.ReleaseResources();
+                        break;
+                    default:
+                        base.HandleMessage(msg);
+                        break;
+                }
+            }
+        }
 
 
-
-        public class LocationListener : Java.Lang.Object,Android.Locations.ILocationListener
+        public class LocationListenerHelper : Java.Lang.Object,Android.Locations.ILocationListener
         {
             Location mLastLocation;
 
-            public LocationListener(string gpsProvider)
+            public LocationListenerHelper(string gpsProvider)
             {
                 mLastLocation = new Location(gpsProvider);
             }
@@ -147,6 +177,7 @@ namespace LocationManager.ServicePackage
             void ILocationListener.OnLocationChanged(Location location)
             {
                 mLastLocation.Set(location);
+                Log.Error(TAG, "Location Latitude =>>" + location.Latitude + " Longitude=>>" + location.Longitude);
                 /*
                  * Need to make a network call to push the lat long to the server
                  */
