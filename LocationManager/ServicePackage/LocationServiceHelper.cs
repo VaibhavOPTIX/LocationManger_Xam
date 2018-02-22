@@ -196,7 +196,7 @@ namespace locationManager.ServicePackage
 
                 pushObject obj = new pushObject();
                 obj.items = new List<pushItem>();
-                obj.id = 1;
+                obj.id = 2;
                 obj.items.Add(new pushItem { lan = Convert.ToDecimal(location.Longitude), lat = Convert.ToDecimal(location.Latitude), localid = 0, timestamp = DateTime.Now.Millisecond.ToString() });
                 locationServiceHelper.networkCall.SendCoordinateAsync(obj);
             }
