@@ -19,11 +19,11 @@ namespace LocationManager
     public class MainActivity : AppCompatActivity, ServiceResultReceiver.IReceiver, IServiceConnection
     {
         Button startService, stopService;
-        TextView startTime, status;
+        TextView startTime, status, coordinate;
 
         public ServiceResultReceiver receiver;
 
-        public long serviceStartTime;
+        public string[] serviceStartTime;
 
         bool permissionGranted;
         Context mContext;
@@ -82,6 +82,7 @@ namespace LocationManager
             stopService = FindViewById<Button>(Resource.Id.stopService);
             startTime = FindViewById<TextView>(Resource.Id.startTime);
             status = FindViewById<TextView>(Resource.Id.status);
+            coordinate = FindViewById<TextView>(Resource.Id.coordinate);
             startTime.Text = "Initializing";
         }
 
@@ -138,7 +139,8 @@ namespace LocationManager
         {
             if (resultCode == (int)Result.Ok)
             {
-                serviceStartTime = resultData.GetLong("cordinate");//.Split(':');
+                serviceStartTime = resultData.GetString("cordinate").Split(':');
+                coordinate.Text = System.String.Format("{0} Latitude:{0} \nLongitude{0}", coordinate.Text, serviceStartTime[0], serviceStartTime[1]);
             }
         }
 

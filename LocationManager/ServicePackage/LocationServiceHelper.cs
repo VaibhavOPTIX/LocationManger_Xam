@@ -28,10 +28,7 @@ namespace LocationManager.ServicePackage
         public long serviceStartTime;
 
         private Android.Locations.LocationManager mLocationManager = null;
-        LocationListenerHelper[] mLocationListeners = new LocationListenerHelper[]{
-            new LocationListenerHelper(Android.Locations.LocationManager.GpsProvider),
-            new LocationListenerHelper(Android.Locations.LocationManager.NetworkProvider)
-        };
+        LocationListenerHelper[] mLocationListeners = null;
 
         HandlerThread handlerThread;
 
@@ -80,6 +77,10 @@ namespace LocationManager.ServicePackage
             serviceStartTime = UtilityClass.GetUTC();
             if( mMessenger ==null)
                 mMessenger = new Messenger(new IncomingHandler(this));
+            mLocationListeners = new LocationListenerHelper[]{
+            new LocationListenerHelper(this,Android.Locations.LocationManager.GpsProvider),
+            new LocationListenerHelper(this,Android.Locations.LocationManager.NetworkProvider)
+        };
 
             // Creates a new background thread for processing messages or runnables sequentially
             handlerThread = new HandlerThread("LocationThread");
@@ -169,15 +170,21 @@ namespace LocationManager.ServicePackage
         public class LocationListenerHelper : Java.Lang.Object,Android.Locations.ILocationListener
         {
             Location mLastLocation;
+            LocationServiceHelper locationServiceHelper;
 
-            public LocationListenerHelper(string gpsProvider)
+            public LocationListenerHelper(LocationServiceHelper locationServiceHelper, string gpsProvider)
             {
                 mLastLocation = new Location(gpsProvider);
             }
 
             void ILocationListener.OnLocationChanged(Location location)
             {
+                Bundle bundle = new Bundle();
+                bundle.PutString("cordinate", location.Latitude+":"+location.Longitude);
+            
                 mLastLocation.Set(location);
+
+                locationServiceHelper.receiver.Send(Result.Ok, bundle);
                 Log.Error(TAG, "Location Latitude =>>" + location.Latitude + " Longitude=>>" + location.Longitude);
                 /*
                  * Need to make a network call to push the lat long to the server
@@ -196,5 +203,6 @@ namespace LocationManager.ServicePackage
             {
             }
         }
+
     }
 }
