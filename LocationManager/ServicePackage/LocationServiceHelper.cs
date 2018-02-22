@@ -17,6 +17,7 @@ using Android.Util;
 
 namespace LocationManager.ServicePackage
 {
+    [Service(Exported = false, Name = "LocationManager.ServicePackage.LocationServiceHelper", Label ="LocationServiceHelper")]
     public class LocationServiceHelper : Service
     {
         private const String TAG = "LocationWriteService";

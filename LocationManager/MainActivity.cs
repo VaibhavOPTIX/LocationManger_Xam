@@ -274,22 +274,24 @@ namespace LocationManager
         private class RunnableHelper : Java.Lang.Object, Java.Lang.IRunnable
         {
             MainActivity splashActivity;
-            Handler handler;
-            int progress = 0;
+            Handler mHandler;
 
             public RunnableHelper(MainActivity splashActivity, Handler handler)
             {
                 this.splashActivity = splashActivity;
+                this.MHandler = handler;
             }
+
+            public Handler MHandler { get => mHandler; set => mHandler = value; }
 
             public new void Dispose()
             {
-                throw new NotImplementedException();
+               
             }
 
             public void Run()
             {
-                if (splashActivity.mBound && splashActivity.serviceStartTime != 0l)
+                if (splashActivity.mBound && splashActivity.serviceStartTime != 0L)
                 {
                     long timeDelta = UtilityClass.GetUTC() - splashActivity.serviceStartTime;
                     splashActivity.startTime.Text = TimeUnit.Milliseconds.ToMinutes(timeDelta) + " Minutes";
@@ -310,7 +312,7 @@ namespace LocationManager
                         }
                     }
                 }
-                handler.PostDelayed(this, 60000);
+                MHandler.PostDelayed(this, 60000);
             }
         }
     }
