@@ -10,6 +10,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using locationManager.ServicePackage;
+using locationManager.utility;
 
 namespace locationManager.servicePackage
 {
@@ -20,16 +21,23 @@ namespace locationManager.servicePackage
         private const int PERIOD = 300000;  // 5 minutes
         public override void OnReceive(Context context, Intent intent)
         {
-            AlarmManager mgr = (AlarmManager)context.GetSystemService(Context.AlarmService);
-            Intent i = new Intent(context, typeof(OnAlarmReceiver));
-            PendingIntent pi = PendingIntent.GetBroadcast(context, 0,
-                    i, 0);
+            if (Build.VERSION.SdkInt < BuildVersionCodes.O)
+            {
+                AlarmManager mgr = (AlarmManager)context.GetSystemService(Context.AlarmService);
+                Intent i = new Intent(context, typeof(OnAlarmReceiver));
+                PendingIntent pi = PendingIntent.GetBroadcast(context, 0,
+                        i, 0);
 
-            mgr.SetRepeating(AlarmType.ElapsedRealtimeWakeup,
-                    SystemClock.ElapsedRealtime() + 60000,
-                    PERIOD,
-                    pi);
-            context.StartService(new Intent(context, typeof(LocationServiceHelper)));
+                mgr.SetRepeating(AlarmType.ElapsedRealtimeWakeup,
+                        SystemClock.ElapsedRealtime() + 60000,
+                        PERIOD,
+                        pi);
+            }
+            else
+            {
+                UtilityClass.scheduleJob(context);
+            }
+            LocationServiceHelper.EnqueueWork(context, intent);
         }
     }
 }

@@ -140,9 +140,22 @@ namespace locationManager
         {
             if (resultCode == (int)Result.Ok)
             {
-                serviceStartTime = resultData.GetString("cordinate").Split(':');
-                coordinate.Text = System.String.Format("Latitude:{0} \nLongitude{1}", serviceStartTime[0], serviceStartTime[1]);
+                if (resultData.GetString("cordinate") != null && resultData.GetString("cordinate").Length > 0)
+                {
+                    serviceStartTime = resultData.GetString("cordinate").Split(':');
+                    coordinate.Text = System.String.Format("Latitude:{0} \nLongitude{1}", serviceStartTime[0], serviceStartTime[1]);
+                }
+
+                else if (resultData.GetBinder("binder") != null)
+                {
+                    // We've bound to LocalService, cast the IBinder and get LocalService instance
+                    mService = new Messenger(resultData.GetBinder("binder"));
+                    mBound = true;
+                    status.Text = "Running";
+                }
             }
+        
+            
         }
 
         private void StartService()
@@ -205,18 +218,24 @@ namespace locationManager
         private void StartServiceAndBind()
         {
             startTime.Text = "Initializing";
-            AlarmManager mgr = (AlarmManager)GetSystemService(Context.AlarmService);
-            Intent i = new Intent(this, typeof(OnAlarmReceiver));
-            PendingIntent pi = PendingIntent.GetBroadcast(this, 0,
-                    i, 0);
+            if (Build.VERSION.SdkInt < BuildVersionCodes.O) { 
+                AlarmManager mgr = (AlarmManager)GetSystemService(Context.AlarmService);
+                Intent i = new Intent(this, typeof(OnAlarmReceiver));
+                PendingIntent pi = PendingIntent.GetBroadcast(this, 0,
+                        i, 0);
 
-            mgr.SetRepeating(AlarmType.ElapsedRealtime,
-                    SystemClock.ElapsedRealtime() + 60000,
-                    300000,
-                    pi);
+                mgr.SetRepeating(AlarmType.ElapsedRealtime,
+                        SystemClock.ElapsedRealtime() + 60000,
+                        300000,
+                        pi);
+            }
+            else
+            {
+                UtilityClass.scheduleJob(mContext);
+            }
             Intent serviceIntent = new Intent(mContext, typeof(LocationServiceHelper));
             serviceIntent.PutExtra("receiver", receiver);
-            StartService(serviceIntent);
+            LocationServiceHelper.EnqueueWork(mContext, serviceIntent);
             if (!mBound)
                 BindService(serviceIntent, this, Bind.AutoCreate);
         }
@@ -225,7 +244,7 @@ namespace locationManager
         {
             base.OnResume();
             /*Check if the service is running on app resume and  bing to the service to get relevant data*/
-            if (UtilityClass.IsMyServiceRunning(this, typeof(LocationServiceHelper).Name))
+            if (UtilityClass.IsMyServiceRunning(this, typeof(LocationServiceHelper).FullName))
             {
                 StartServiceAndBind();
                 status.Text = "Running";

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Android;
 using Android.App;
+using Android.App.Job;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
@@ -12,14 +13,16 @@ using Android.Support.V7.App;
 using Android.Text;
 using Android.Views;
 using Android.Widget;
+using Java.IO;
 using Java.Util;
+using locationManager.ServicePackage;
 
 namespace locationManager.utility
 {
     class UtilityClass
     {
         public const int PERMISSION_ALL = 1;
-        public static String[] PERMISSIONS = {Manifest.Permission.AccessFineLocation};
+        public static String[] PERMISSIONS = { Manifest.Permission.AccessFineLocation };
         public const int GET_START_TIME = 1;
         public const int STOP_SERVICE = 2;
 
@@ -95,7 +98,7 @@ namespace locationManager.utility
             ActivityManager manager = (ActivityManager)mContext.GetSystemService(Context.ActivityService);
             foreach (ActivityManager.RunningServiceInfo service in manager.GetRunningServices(Int32.MaxValue))
             {
-                if (serviceClass.Equals(service.Service.ClassName))
+                if (serviceClass.ToLower() == service.Service.ClassName.ToLower())
                 {
                     return true;
                 }
@@ -113,6 +116,48 @@ namespace locationManager.utility
             return alertDialog;
         }
 
+        /**
+         * This function writes to the file with the data passed
+         *
+         * @param context   : Context of the calling component/service
+         * @param sFileName : the file name type indicating the file time being written to. values can
+         *                  be "active","idle" or "health"
+         * @param sBody     : the content that is to be written
+         * @param startTime : the Service start time, that will be used to reference the other file of
+         *                  the "sFileName" to query out the most recent file
+         */
+        public static bool GenerateNoteOnSD(Context context, String sFileName, String sBody, long startTime)
+        {
+            try
+            {
+                File root = new File(Android.OS.Environment.ExternalStorageDirectory, "Location_data");
+                if (!root.Exists())
+                {
+                    root.Mkdir();
+                }
+                File gpxfile = new File(root, sFileName + "_" + startTime + ".txt");
+                FileWriter writer = new FileWriter(gpxfile, true);
+                writer.Append(sBody);
+                writer.Flush();
+                writer.Close();
+                return true;
+            }
+            catch (IOException e)
+            {
+                e.PrintStackTrace();
+                return false;
+            }
+        }
 
+        // schedule the start of the service every 10 - 30 seconds
+        public static void scheduleJob(Context context)
+        {
+            ComponentName serviceComponent = new ComponentName(context, Java.Lang.Class.FromType(typeof(LocationServiceHelper)));
+            JobInfo.Builder builder = new JobInfo.Builder(0, serviceComponent);
+            builder.SetMinimumLatency(1 * 1000); // wait at least
+            builder.SetOverrideDeadline(3 * 1000); // maximum delay
+            JobScheduler jobScheduler = (JobScheduler)context.GetSystemService(Context.JobSchedulerService);
+            jobScheduler.Schedule(builder.Build());
+        }
     }
 }

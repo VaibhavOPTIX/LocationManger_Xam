@@ -24,10 +24,9 @@ namespace locationManager.network
             client = new HttpClient();
         }
 
-        public async void SendCoordinateAsync(pushObject data)
+        public async void SendCoordinateAsync(StringContent data)
         {
-            var stringContent = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await client.PostAsync("http://test.ninestack.com/pushes/api/push", stringContent);
+            HttpResponseMessage response = await client.PostAsync("http://test.ninestack.com/pushes/api/push", data);
             response.EnsureSuccessStatusCode();
             //if (response.IsSuccessStatusCode)
             //{

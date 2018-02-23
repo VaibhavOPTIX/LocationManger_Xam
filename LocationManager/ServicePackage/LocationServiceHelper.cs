@@ -17,23 +17,29 @@ using Android.Util;
 using locationManager.network;
 using locationManager.model;
 using static locationManager.model.pushObject;
+using Newtonsoft.Json;
+using System.Net.Http;
+using Android.Support.V4.App;
+using Android;
 
 namespace locationManager.ServicePackage
 {
-    [Service(Exported = false, Name = "locationManager.servicePackage.LocationServiceHelper", Label ="LocationServiceHelper")]
-    public class LocationServiceHelper : Service
+    [Service(Exported = false, Name = "locationManager.servicePackage.LocationServiceHelper", Label ="LocationServiceHelper",Permission = "android.permission.BIND_JOB_SERVICE" )]
+    public class LocationServiceHelper : JobIntentService,ILocationListener
     {
+        const int JOB_ID = 1000;
         private const String TAG = "LocationWriteService";
         public const String LOCK_NAME_STATIC = "LocationWriteService.Static";
-        private const int LOCATION_INTERVAL = 1000 * 30;
-        private const float LOCATION_DISTANCE = 10f;
+        private const int LOCATION_INTERVAL = 1000 * 15;
+        private const float LOCATION_DISTANCE = 1f;
         private static PowerManager.WakeLock lockStatic = null;
         public long serviceStartTime;
 
+        Location mLastLocation;
         NetworkCall networkCall;
 
         private Android.Locations.LocationManager mLocationManager = null;
-        LocationListenerHelper[] mLocationListeners = null;
+        Location[] mLocationListeners = null;
 
         HandlerThread handlerThread;
 
@@ -44,22 +50,16 @@ namespace locationManager.ServicePackage
         */
         Messenger mMessenger = null;
 
-        public override IBinder OnBind(Intent intent)
-        {
-            if(networkCall==null)
-                networkCall = new NetworkCall();
-            return mMessenger.Binder;
-        }
 
         // this used to get a wakelock when a file is to be written to as it may so happen the CPU is asleep
-        public void AcquireStaticLock(Context context) => GetLock(context).Acquire();
+        public void AcquireStaticLock() => GetLock().Acquire();
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private PowerManager.WakeLock GetLock(Context context)
+        private PowerManager.WakeLock GetLock()
         {
             if (lockStatic == null)
             {
-                PowerManager mgr = (PowerManager)context.GetSystemService(Context.PowerService);
+                PowerManager mgr = (PowerManager)this.GetSystemService(Context.PowerService);
 
                 lockStatic = mgr.NewWakeLock(WakeLockFlags.Partial,
                         LOCK_NAME_STATIC);
@@ -74,6 +74,9 @@ namespace locationManager.ServicePackage
             base.OnStartCommand(intent, flags, startId);
             if (intent != null && intent.GetParcelableExtra("receiver") != null)
                 receiver = (ResultReceiver)intent.GetParcelableExtra("receiver");
+
+            mLocationListeners = new Location[] { new Location(Android.Locations.LocationManager.GpsProvider), new Location(Android.Locations.LocationManager.NetworkProvider) };
+
             return StartCommandResult.Sticky;
         }
     
@@ -84,10 +87,8 @@ namespace locationManager.ServicePackage
             serviceStartTime = UtilityClass.GetUTC();
             if( mMessenger ==null)
                 mMessenger = new Messenger(new IncomingHandler(this));
-            mLocationListeners = new LocationListenerHelper[]{
-            new LocationListenerHelper(this,Android.Locations.LocationManager.GpsProvider),
-            new LocationListenerHelper(this,Android.Locations.LocationManager.NetworkProvider)
-        };
+            new Location(Android.Locations.LocationManager.GpsProvider);
+            new Location(Android.Locations.LocationManager.NetworkProvider);
 
             // Creates a new background thread for processing messages or runnables sequentially
             handlerThread = new HandlerThread("LocationThread");
@@ -100,11 +101,9 @@ namespace locationManager.ServicePackage
             {
                 InitializeLocationManager();
                 mLocationManager.RequestLocationUpdates(
-                            Android.Locations.LocationManager.GpsProvider, LOCATION_INTERVAL, LOCATION_DISTANCE,
-                            mLocationListeners[0]);
+                            Android.Locations.LocationManager.GpsProvider, LOCATION_INTERVAL, LOCATION_DISTANCE,this);
                 mLocationManager.RequestLocationUpdates(
-                           Android.Locations.LocationManager.NetworkProvider, LOCATION_INTERVAL, LOCATION_DISTANCE,
-                           mLocationListeners[1]);
+                           Android.Locations.LocationManager.NetworkProvider, LOCATION_INTERVAL, LOCATION_DISTANCE,this);
             });
         }
 
@@ -125,7 +124,7 @@ namespace locationManager.ServicePackage
         {
             base.OnDestroy();
             if (lockStatic != null && lockStatic.IsHeld)
-                GetLock(this).Release();
+                GetLock().Release();
 
             handlerThread.QuitSafely();
             StopSelf();
@@ -135,7 +134,7 @@ namespace locationManager.ServicePackage
                 {
                     try
                     {
-                        mLocationManager.RemoveUpdates(mLocationListeners[i]);
+                        mLocationManager.RemoveUpdates(this);
                     }
                     catch (Exception ex)
                     {
@@ -143,6 +142,71 @@ namespace locationManager.ServicePackage
                     }
                 }
             }
+        }
+
+        /**
+         * Convenience method for enqueuing work in to this service.
+         */
+        public static void EnqueueWork(Context context, Intent work)
+        {
+            
+                EnqueueWork(context, Java.Lang.Class.FromType(typeof(LocationServiceHelper)), JOB_ID, work);
+        }
+
+
+        protected override void OnHandleWork(Intent intent)
+        {
+            if (networkCall == null)
+                networkCall = new NetworkCall();
+            if (intent != null && intent.GetParcelableExtra("receiver") != null)
+                receiver = (ResultReceiver)intent.GetParcelableExtra("receiver");
+
+            if (mMessenger == null)
+                mMessenger = new Messenger(new IncomingHandler(this));
+
+            Bundle bundle = new Bundle();
+            bundle.PutBinder("binder", mMessenger.Binder);
+            receiver.Send(Result.Ok, bundle);
+            OnCreate();
+            UtilityClass.scheduleJob(this);
+        }
+
+        void ILocationListener.OnLocationChanged(Location location)
+        {
+            //mLastLocation.Set(location);
+
+            Bundle bundle = new Bundle();
+            bundle.PutString("cordinate", location.Latitude + ":" + location.Longitude);
+            receiver.Send(Result.Ok, bundle);
+
+            Log.Error(TAG, "Location Latitude =>>" + location.Latitude + " Longitude=>>" + location.Longitude);
+            Console.WriteLine("Location Latitude =>>" + location.Latitude + " Longitude=>>" + location.Longitude);
+
+            pushObject obj = new pushObject();
+            obj.items = new List<pushItem>();
+            obj.id = 2;
+            obj.items.Add(new pushItem { lan = Convert.ToDecimal(location.Longitude), lat = Convert.ToDecimal(location.Latitude), localid = 0, timestamp = UtilityClass.GetUTC().ToString() });
+            var stringContent = new StringContent(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json");
+            networkCall.SendCoordinateAsync(stringContent);
+
+            AcquireStaticLock();
+            if (UtilityClass.GenerateNoteOnSD(this, "Location_log", JsonConvert.SerializeObject(obj), serviceStartTime))
+            {
+                Toast.MakeText(this, "Write Complete\n" + JsonConvert.SerializeObject(obj), ToastLength.Short).Show();
+            }
+            GetLock().Release();
+        }
+
+        void ILocationListener.OnProviderDisabled(string provider)
+        {
+        }
+
+        void ILocationListener.OnProviderEnabled(string provider)
+        {
+        }
+
+        void ILocationListener.OnStatusChanged(string provider, Availability status, Bundle extras)
+        {
         }
 
         public class IncomingHandler: Handler
@@ -172,47 +236,5 @@ namespace locationManager.ServicePackage
                 }
             }
         }
-
-
-        public class LocationListenerHelper : Java.Lang.Object,Android.Locations.ILocationListener
-        {
-            Location mLastLocation;
-            LocationServiceHelper locationServiceHelper;
-
-            public LocationListenerHelper(LocationServiceHelper locationServiceHelper, string gpsProvider)
-            {
-                mLastLocation = new Location(gpsProvider);
-                this.locationServiceHelper = locationServiceHelper;
-            }
-
-            async void ILocationListener.OnLocationChanged(Location location)
-            {
-                Bundle bundle = new Bundle();
-                bundle.PutString("cordinate", location.Latitude+":"+location.Longitude);
-                locationServiceHelper.receiver.Send(Result.Ok, bundle);
-                Log.Error(TAG, "Location Latitude =>>" + location.Latitude + " Longitude=>>" + location.Longitude);
-
-                mLastLocation.Set(location);
-
-                pushObject obj = new pushObject();
-                obj.items = new List<pushItem>();
-                obj.id = 2;
-                obj.items.Add(new pushItem { lan = Convert.ToDecimal(location.Longitude), lat = Convert.ToDecimal(location.Latitude), localid = 0, timestamp = DateTime.Now.Millisecond.ToString() });
-                locationServiceHelper.networkCall.SendCoordinateAsync(obj);
-            }
-
-            void ILocationListener.OnProviderDisabled(string provider)
-            {
-            }
-
-            void ILocationListener.OnProviderEnabled(string provider)
-            {
-            }
-
-            void ILocationListener.OnStatusChanged(string provider, Availability status, Bundle extras)
-            {
-            }
-        }
-
     }
 }
